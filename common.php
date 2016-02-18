@@ -221,7 +221,7 @@ function SavePieChartRecentProjects($projects)
     {
         if(!$component->recent)
             continue;
-        $dataSet->addPoint(new Point($component->name.'('.(string)$component->recent_worklog_acc.' Days)', round($component->recent_worklog_acc)));
+        $dataSet->addPoint(new Point($component->name.'('.(string)truncate($component->recent_worklog_acc,1).' Days)', round($component->recent_worklog_acc)));
     }    
     $chart->setDataSet($dataSet);
     $chart->setTitle("Last Week Projects");
@@ -243,6 +243,14 @@ function SaveEngineersWorkDistribution($projects)
 		$chart->setTitle("Distribution");
 		$chart->render("generated/".$comp->name."_ed.png");
 	}
+}
+
+function CreateAllChartsAndGraphs()
+{
+	global $projects;
+	SavePieChartRecentProjects($projects);
+	SaveWeeklyWorkLoad($projects);
+	SaveEngineersWorkDistribution($projects);
 }
 
 function GetIntervalDate()

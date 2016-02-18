@@ -190,7 +190,7 @@ function UpdateParentChildTasks(&$projects)
 				$parenttask = Find($comp->tasks,$task->parentid);
 				if($parenttask != null)
 				{
-					if($env == "cmd") echo "parent of ".$task->summary." is ".$parenttask->summary.EOL;
+					//if($env == "cmd") echo "parent of ".$task->summary." is ".$parenttask->summary.EOL;
 					$parenttask->worklogs = array_merge($parenttask->worklogs,$task->worklogs);
 					$task->worklogs = array();
 					$parenttask->timespent += $task->timespent;
@@ -200,7 +200,7 @@ function UpdateParentChildTasks(&$projects)
 					$parenttask->recent = $task->recent || $parenttask->recent;
 					$task->recent = 0;
 					$task->hide=true;
-					if($env == "cmd") echo $parenttask->timespent.EOL;
+					//if($env == "cmd") echo $parenttask->timespent.EOL;
 				}
 			}
 		}

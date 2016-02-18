@@ -176,10 +176,7 @@ else
 	UpdateTheDateFile();
 }
 
-echo "Create Recent Work Pie Chart".
-SavePieChartRecentProjects($projects);
-SaveWeeklyWorkLoad($projects);
-SaveEngineersWorkDistribution($projects);
+CreateAllChartsAndGraphs();
 
 $db=null;
 ?>
