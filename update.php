@@ -176,6 +176,8 @@ else
 	UpdateTheDateFile();
 }
 
+// Read the data again to create new graphs
+$projects = ReadDataBase();
 CreateAllChartsAndGraphs();
 
 $db=null;
