@@ -3,20 +3,70 @@
 <head>
 	<meta charset="UTF-8">
 	<title>UI and Graphics Team Dashboard</title>
+	
+	<!-- <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css"> -->
+    <link href="css/style.css" type="text/css" rel="stylesheet">
+    <!-- <link href="css/prettify.min.css" rel="stylesheet" type="text/css"> -->
+     <style type="text/css">.fn-gantt *, .fn-gantt *:after,.fn-gantt *:before {-webkit-box-sizing: content-box;-moz-box-sizing: content-box;box-sizing: content-box;}  </style> 
+	<!-- <script src="js/jquery-1.7.2.min.js"></script> -->
+	<!-- <script src="js/jquery.fn.gantt.js"></script> -->
+	
+	
 <link rel="stylesheet" type="text/css" href="easyui/themes/default/easyui.css">
 	<link rel="stylesheet" type="text/css" href="easyui/themes/icon.css">
 	
+       
 
 	<link rel="stylesheet" type="text/css" href="easyui/demo/demo.css">
 	<script type="text/javascript" src="easyui/jquery.min.js"></script>
 	<script type="text/javascript" src="easyui/jquery.easyui.min.js"></script>
     <script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	
+	
+	<script src="js/jquery.fn.gantt.js"></script>
     <link type="text/css" rel="Stylesheet" href="themes/vader/jquery-ui.css">
+	<!-- <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">  -->
+	
+	<!-- <link href="css/style.css" type="text/css" rel="stylesheet"> -->
+    <!--  <link href="css/prettify.min.css" rel="stylesheet" type="text/css"> -->
 
 <script type="text/javascript">
     $(document).ready(function () 
 	{
+
+		$(".gantt").gantt({
+			source:"json-generator.php?component=all&_showunworkedtasks=0&_showrecentonly=0&_weekly=1&_significant=1",
+			scale: "weeks",
+            navigate: "scroll",
+            maxScale: "months",
+            minScale: "days",
+			scrollToToday:true,
+            itemsPerPage:100,
+            useCookie: false,
+			
+			onItemClick: function(data) {
+					var page = "showdata.php?"+data;
+					alert(page);
+					var pagetitle = "dfff";//$(this).attr("title")
+					var height = 570;//$(this).attr("height")
+					var width = 1200;//$(this).attr("width")
+					var resizeable = false;//$(this).attr("resizeable")
+					var $dialog = $('<div></div>')
+			
+					.html('<iframe style="" " src="' + page + '" width="99.5%" height="100%"></iframe>')
+					.dialog({
+						autoOpen: false,
+						modal: true,
+						height:height,
+						resizable: resizeable,
+						width: width,
+						title: pagetitle
+					});
+					$dialog.dialog('open');
+            },
+		});
+		
 		
 		$('a#pop').live('click', function (e) 
 		{
@@ -48,11 +98,13 @@
 require_once('common.php');
 require_once('db-interface.php');
 $projects = ReadDataBase();
+//SavePieChartRecentProjects($projects);
+//return;
 
 function GetEngineerList($component)
 {
 	$eng_str = "";
-	foreach($component->engineers as $engineer=>$value) 
+	foreach($component->recent_engineers as $engineer=>$value) 
 	if($eng_str=="") $eng_str = DisplayName($engineer); else $eng_str  = $eng_str." , ".DisplayName($engineer);
 	return $eng_str;
 }
@@ -85,7 +137,15 @@ function DisplayOldProjects()
 		}
 	}
 }
-
+function HowOld($date)
+{
+	$date1 = new DateTime("now");
+	$date2 = new DateTime($date);
+	$interval = date_diff($date1, $date2);
+	return $interval->format('%R%a');
+							
+	
+}
 function DisplayResentWorkLogs()
 {
 	global $projects;
@@ -112,31 +172,58 @@ function DisplayResentWorkLogs()
 			//$title ="ddddd";
 			echo'<div id="project1" title="'.$title.'"  data-options="selected:true" style="padding:10px;">';  
 			echo $link."<br>";
-			foreach($component->tasks as $task)
+			foreach($component->parenttasks as $parenttask)
 			{
-				if($task->recent)
+				if($parenttask->recent)
 				{
-					echo $tabs.'<a id="pop" width="1200" height="570" style="font-weight: bold;" id="task'.$task->id.'" href='.JIRA_SERVER.'/browse/'.$task->key.'>'.$task->summary.'</a>'."".EOL;
+					echo $tabs.'<a id="pop" width="1200" height="570" style="font-weight: bold;" title="'.$parenttask->key.'" href='.JIRA_SERVER.'/browse/'.$parenttask->key.'>'.$parenttask->summary.'</a>'."".EOL;
 					$timespent = 0.0;
-					foreach($task->worklogs as $worklog)
+					foreach($parenttask->worklogs as $worklog)
 					{
 						if($worklog->recent)
 						{
-							if(date("W") - GetWeekNumber($worklog->started)== 0)
+							if( HowOld($worklog->started) >= -6)
 								$image = "thisweek.png";
 							else
 								$image = "prevweek.png";;
-							$timespent = (float)$timespent + (float)$worklog->timespent;
+							//$timespent = (float)$timespent + (float)$worklog->timespent;
 							echo '<p style="margin-left: .5cm;margin-right: .5cm;">';
-							echo '<img src="'.$image.'" alt="More" style="width:10;height:10px;">';
+							
+							$href=JIRA_SERVER.'/browse/'.$parenttask->key.'?focusedWorklogId='.$worklog->id.'&page=com.atlassian.jira.plugin.system.issuetabpanels%3Aworklog-tabpanel#worklog-'.$worklog->id.'>';
+							echo '<a id="pop" width="1200" height="570" style="font-weight: bold;" title="'.$parenttask->key.'"  href="'.$href.'">';
+							echo '<img  src="'.$image.'" alt="More" style="width:10;height:10px;">';
+							echo '</a>';
 							echo " ".DisplayName($worklog->author)." ".$worklog->comment.EOL;
+							//echo $worklog->started;
 							echo '</p>';
 						}
 					}
-					$timespent = "   (".truncate($timespent,1). " Days)";
-					echo '<script>';
-					echo '$("#task'.$task->id.'").append("'.$timespent.'")';
-					echo '</script>';
+					foreach($parenttask->subtasks as $subtask)
+					{
+						foreach($subtask->worklogs as $worklog)
+						if($worklog->recent)
+						{
+							if( HowOld($worklog->started) >= -6)
+								$image = "thisweek.png";
+							else
+								$image = "prevweek.png";;
+							//$timespent = (float)$timespent + (float)$worklog->timespent;
+							echo '<p style="margin-left: .5cm;margin-right: .5cm;">';
+							echo '<a id="pop" width="1200" height="570" style="" title="'.$subtask->key.'" href='.JIRA_SERVER.'/browse/'.$subtask->key.'>'.$subtask->summary.'</a>'."".EOL;
+							//echo $subtask->summary.'<br>';
+							$href=JIRA_SERVER.'/browse/'.$subtask->key.'?focusedWorklogId='.$worklog->id.'&page=com.atlassian.jira.plugin.system.issuetabpanels%3Aworklog-tabpanel#worklog-'.$worklog->id.'>';
+							echo '<a id="pop" width="1200" height="570" style="font-weight: bold;" title="'.$subtask->key.'"  href="'.$href.'">';
+							echo '<img src="'.$image.'" alt="More" style="width:10;height:10px;">';
+							echo '</a>';
+							echo " ".DisplayName($worklog->author)." ".$worklog->comment.EOL;
+							//echo $worklog->started;
+							echo '</p>';
+						}
+					}
+					//$timespent = "   (".truncate($timespent,1). " Days)";
+					//echo '<script>';
+					//echo '$("#task'.$task->id.'").append("'.$timespent.'")';
+					//echo '</script>';
 				}
 				
 			}
@@ -150,26 +237,36 @@ function GetEastPanelContent()
 	echo '<div class="easyui-accordion" style="width:100%;">';
 		echo '<img style="max-width:500px;max-height:500px;width:auto; height:auto;" id="graph-image" alt="Pie chart"  src="generated/projects.png" />';
 		echo '<img  style="max-width:500px;max-height:500px;width:auto; height:auto;" id="graph-image" alt="Pie chart"  src="generated/workload.png"/>';
-	
+
 		global $projects;
 		$height =  count($projects)*28;
-		echo '<div id="projects" title="Overview" data-options="selected:true" style="">';
-		echo '</div>';
+	
 		//echo '<img style="max-width:500px;max-height:500px;width:auto; height:auto;" id="graph-image" alt="Pie chart"  src="bar.jpg" />';
+		//echo '<iframe id="foo" name="foo" frameborder="0" scrolling="no" width="100%" height="'.$height.'" src="showgantt.php?component=all&_showunworkedtasks=0&_showrecentonly=0&_itemsperpage=200&_scroll=1&_weekly=1&_scale=weeks&_significant=1"></iframe>';
+		//echo '<div id="projects" title="Click for Old Projects" data-options="" style="">';
+		//DisplayOldProjects();
+		//echo '</div>';
 		
-		echo '<iframe id="foo" name="foo" frameborder="0" scrolling="no" width="100%" height="'.$height.'" src="showgantt.php?component=all&_showunworkedtasks=0&_showrecentonly=0&_itemsperpage=200&_scroll=1&_weekly=1&_scale=weeks&_significant=1"></iframe>';
-		echo '<div id="projects" title="Click for Old Projects" data-options="" style="">';
-		DisplayOldProjects();
+		echo '<div id="projects" title="Monthly Summary" data-options="selected:true" style="">';
+		echo '<div class="gantt" style="width:100%;" >dsdsdsds</div>';
 		echo '</div>';
+		
 	echo '</div>';
 }
 function GetWestPanelContent()
 {
 	echo '<div class="easyui-accordion" style="width:100%;">';
 		DisplayResentWorkLogs();
-		global $projects;
-		$height =  count($projects)*29;
+		echo '<div id="projects" title="Old Projects" data-options="" style="">';
+			DisplayOldProjects();
+		echo '</div>';
+		//global $projects;
+		//$height =  count($projects)*29;
 	echo '</div>';
+	
+	
+	
+	
 	//echo '<img style="max-width:500px;max-height:500px;width:auto; height:auto;   display:table-cell;margin: auto auto;" id="graph-image" alt="Pie chart"  src="generated/projects.png" />';
 	//echo '<img  style="max-width:500px;max-height:500px;width:auto; height:auto; display:table-cell;margin: auto auto;" id="graph-image" alt="Pie chart"  src="generated/workload.png"/>';
 }
@@ -185,10 +282,15 @@ function GetSouthPanelContent()
 
 
 <body class="easyui-layout">
+
 	<div data-options="region:'north'" style="height:25px">
 	<img src="blue-gradient.jpg" alt="Mountain View" style="width:100%;height:20px;">
 	</div>
-	<div data-options="region:'west',collapsible:false, split:false,title:'UI & Graphics Dashboard'" style="width:60%;"><?php GetEastPanelContent()?></div>
+	<div data-options="region:'west',collapsible:false, split:false,title:'UI & Graphics Dashboard'" style="width:60%;">
+	<?php GetEastPanelContent()?>
+	
+	</div>
+	
 	<div data-options="region:'center',title:''"><?php GetWestPanelContent()?></div>
 	<div data-options="region:'south',split:true" style="height:30px;">
 	<img src="blue-gradient.jpg" alt="Mountain View" style="width:100%;height:20px;">

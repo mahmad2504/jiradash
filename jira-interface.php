@@ -42,16 +42,17 @@ function ConvertTimeSpentSimple($timespent)
 	
 	
 }
-function ConvertJiraTime($timespent)
+
+function ConvertJiraTime($timespent)//converts to days
 {
 	$acc = 0;
 	$timespent_array = explode(" ",$timespent);
 	foreach ($timespent_array as $i)
 		$acc = $acc + ConvertTimeSpentSimple($i);
-	return $acc;
+	return $acc*8*60*60;
 }
 
-function GetWorkLog($task)
+function GetWorkLog(&$task)
 {
 	global $curl;
 	global $users;
@@ -70,8 +71,10 @@ function GetWorkLog($task)
 		
 		// ignore un registered users and their logs
 		if(array_key_exists($log['author']['name'] , $users )==false)
+		{
+			$task->timespent = $task->timespent - ConvertJiraTime($log['timeSpent']);
 			continue;
-		
+		}
 		
 		
 		$worklog->id = $log['id'];

@@ -190,6 +190,7 @@ function UpdateParentChildTasks(&$projects)
 				$parenttask = Find($comp->tasks,$task->parentid);
 				if($parenttask != null)
 				{
+					$parenttask->isParent=true;
 					//if($env == "cmd") echo "parent of ".$task->summary." is ".$parenttask->summary.EOL;
 					$parenttask->worklogs = array_merge($parenttask->worklogs,$task->worklogs);
 					$task->worklogs = array();
@@ -203,116 +204,333 @@ function UpdateParentChildTasks(&$projects)
 					//if($env == "cmd") echo $parenttask->timespent.EOL;
 				}
 			}
+			usort($comp->tasks,"MostWorkedTask");
+		}
+		
+		
+	}
+	
+}
+function MostWorkedTask($a,$b)
+{
+	return $a->timespent < $b->timespent;
+	
+}
+
+function PrintTOM($projects)
+{
+	foreach($projects as $component)
+	{
+		echo $component->name." ".$component->status." ".$component->timespent." (";
+		foreach($component->engineers as $engineer=>$timespent)
+			echo $engineer." ".$timespent. " ";
+		echo ")".EOL;
+		
+		foreach($component->parenttasks as $parenttask)
+		{
+			echo " @".$parenttask->key." ".$parenttask->timespent." (";
+			foreach($parenttask->engineers as $engineer=>$timespent)
+				echo $engineer." ".$timespent. " ";
+			echo ")".EOL;
+			
+	
+			foreach($parenttask->worklogs as $worklog)
+				echo "   ".$worklog->author." ".$worklog->timespent.EOL;
+			
+			foreach($parenttask->subtasks as $subtask)
+			{
+				echo "     ".$subtask->key." ".$subtask->timespent." (";
+				foreach($subtask->engineers as $engineer=>$timespent)
+					echo $engineer." ".$timespent. " ";
+				echo ")".EOL;
+				foreach($subtask->worklogs as $worklog)
+					echo "       ".$worklog->author." ".$worklog->timespent.EOL;
+			}
 		}
 		
 	}
 	
+}
+
+
+function ValidateTOM($projects)
+{
+	assert_options(ASSERT_ACTIVE, 1);
+	assert_options(ASSERT_BAIL, 1);
+	
+	
+	foreach($projects as $component)
+	{
+
+		$acc = 0;
+		foreach($component->engineers as $engineer=>$timespent)
+			$acc += $timespent;
+		assert($acc == $component->timespent);
+		
+		$prev=0;
+		$acc = 0;
+		foreach($component->weekwork as $week=>$work)
+		{
+			assert($week >= $prev);
+			$prev=$week;
+			$acc += $work;
+		}
+		assert($component->timespent == $acc);
+		//echo $component->name." ".$component->updated;
+		if($component->recent)
+		{
+	
+			assert($component->recent_worklog_acc > 0 );
+			assert(strtotime($component->updated) > GetIntervalDate());
+		}
+		else
+		{
+			//echo $component->name." ".$component->updated." ".GetIntervalDate().EOL;
+			assert( strtotime($component->updated) < GetIntervalDate());
+			assert($component->recent_worklog_acc == 0 );
+		}
+		$acc2=0;
+		
+		foreach($component->parenttasks as $parenttask)
+		{
+			$acc2 += $parenttask->recent_worklog_acc;
+			assert($component->status >= $parenttask->status);
+			assert(count($component->engineers)>=count($parenttask->engineers));
+			assert($component->updated >= $parenttask->updated);
+			assert($parenttask->parentid == 0);
+			$acc = 0;
+			foreach($parenttask->engineers as $engineer=>$timespent)
+				$acc += $timespent;
+			assert($acc == $parenttask->timespent);
+			
+			$acc3=0;
+			foreach($parenttask->subtasks as $subtask)
+			{
+				$acc3 += $subtask->recent_worklog_acc;
+				assert($component->status >= $subtask->status);
+				assert($parenttask->status >= $subtask->status);
+				assert(count($parenttask->engineers)>=count($subtask->engineers));
+				assert(count($component->engineers)>=count($subtask->engineers));
+				assert($component->updated >= $subtask->updated);
+				assert($parenttask->updated >= $subtask->updated);
+				assert($subtask->parentid == $parenttask->id);
+				$acc = 0;
+				foreach($subtask->engineers as $engineer=>$timespent)
+					$acc += $timespent;
+				assert($acc == $subtask->timespent);
+				
+			}
+			assert($parenttask->recent_worklog_acc >=  $acc3 );
+		}
+		assert($component->recent_worklog_acc == $acc2 );
+		
+		
+		
+	}
+	
+}
+
+
+function UpdateEngineersWorkLogTime(&$engineers,$wlog)
+{
+	if (array_key_exists($wlog->author ,$engineers))
+		$engineers[$wlog->author] += (float)$wlog->timespent;
+	else
+		$engineers[$wlog->author] = (float)$wlog->timespent;
+}
+
+function Decorate(&$status)
+{
+	if(($status == "Resolved") || ($status == "Closed"))
+		$status = "Done";
+	else
+		$status = "In Progress";
+	
+}
+function UpdateStatus($thisstatus,$prevstatus)
+{
+	if($prevstatus == "In Progress")
+		return $prevstatus;
+	else
+		return $thisstatus;
+}
+
+function UpdateWeeklyWorkLoad(&$weekwork,$wrklog)
+{
+	$date = new DateTime();
+    $date->setTimestamp(strtotime($wrklog->started));
+	$date->modify('friday this week');
+	$date_label =  $date->format('Y-m-d');
+	if (array_key_exists($date_label,$weekwork ))
+		$weekwork[$date_label] += (float)$wrklog->timespent;
+	else
+		$weekwork[$date_label] = (float)$wrklog->timespent;
+}
+function IsRecent($dte)
+{
+	if(strtotime($dte)>GetIntervalDate())
+		return true;
+	else
+		return false;
 }
 function ReadDataBase()
 {
 	global $db;
+	global $env;
 	global $users;
-				
 	$projects = array();
-	
 	$comps = $db->query("SELECT * FROM Component");
 	foreach($comps as $comp)
 	{
-		//echo $comp['cname'].EOL;
-		$query = "SELECT SUM(ttimespent) FROM Task Where component_id=".$comp['cid'];
-		$query = $db->prepare($query);
-		$query->execute();   
-		$total = $query->fetch(PDO::FETCH_NUM);
-		$total_days = truncate($total[0]/(3600*8),1);
-		//if($total_days == 0)
-		//	continue;
-	
-		$compt = new Component($comp);
-		$compt->weekwork = array();
-		$compt->engineers = array();
-		$compt->status = "Done";
-		//echo $compt->name.EOL;
-		$compt->recent=false;
-		$compt->updated = 0;
-		$compt->recent_worklog_acc =0;
-		$compt->dayspent = $total_days;
+		$component = new Component($comp);
+//if($env == "cmd") echo $component->name.EOL;
+		$component->parenttasks = array();
+		$component->engineers= array();
+		$component->recent_engineers = array();
+		$component->timespent=0;
+		$component->updated=0;
+		$component->recent_worklog_acc = 0;
+		$component->status = "Done";
+		$component->recent = false;
+		$component->weekwork = array();
 		
-		$compt->tasks = array();
-		$query = "SELECT * FROM Task where Task.component_id = ".$comp['cid']." ORDER By ttimespent DESC";
-		$tasks = $db->query($query);
+		$query = "SELECT * FROM Task where Task.component_id = ".$comp['cid']." AND Task.parentid = 0 ORDER By ttimespent DESC";
+		//echo $query;
+		$ptasks = $db->query($query);
+		//print_r($db->errorInfo());
 		
-		foreach($tasks as $task)
+		foreach($ptasks as $ptask)
 		{
-			$tsk =  new Task($task);
-			//echo $tsk->key.EOL;
-			$tsk->engineers = array();
-			$tsk->recent=false;
-			$tsk->worklogs = array();
-			$query = "SELECT * FROM Worklog where Worklog.task_id = ".$task['tid']." ORDER BY author ASC, started DESC";
-			$worklogs = $db->query($query);
-			if(($tsk->status != "Resolved") && ($tsk->status != "Closed"))
-				$compt->status = "In Progress";
-			//$compt->updated = $tsk->updated;
-			foreach($worklogs as $worklog)
+			$parenttask = new Task($ptask);
+			$parenttask->subtasks = array();
+			$parenttask->worklogs = array();
+			$parenttask->engineers= array();
+			$parenttask->updated = 0;
+			$parenttask->recent_worklog_acc = 0;
+			$parenttask->recent = false;
+			Decorate($parenttask->status);
+			
+			//echo " @".$ptask['key']." ".$ptask['status']." ".$ptask['ttimespent'].EOL;
+			$query = "SELECT * FROM Worklog where Worklog.task_id = ".$ptask['tid']." ORDER BY author ASC, started DESC";
+			$wlogs = $db->query($query);
+			$acc=0;
+			foreach($wlogs as $wlog)
 			{
-				$wrklog = new WorkLog($worklog);
-				// ignore un registered users and their logs
-				//if(array_key_exists($wrklog->author , $users )==false)
-				//	continue;
-				if (array_key_exists($wrklog->author ,$tsk->engineers))
-					$tsk->engineers[$wrklog->author]+= (float)$wrklog->timespent;
-				else
-					$tsk->engineers[$wrklog->author] = (float)$wrklog->timespent;
-				
-				if (array_key_exists($wrklog->author,$compt->engineers))
-					$compt->engineers[$wrklog->author]+= (float)$wrklog->timespent;
-				else
-					$compt->engineers[$wrklog->author] = (float)$wrklog->timespent;
-				
-			//$tsk->engineers[$wrklog->author] = 1;
-			//$compt->engineers[$wrklog->author] = 1;
-				if($compt->updated<$wrklog->started)
-					$compt->updated = $wrklog->started;
-				//echo $compt->updated.EOL;
-				
-				////////////////////////////
-				// Compute weekly work load
-				$date = new DateTime();
-                $date->setTimestamp(strtotime($wrklog->started));
-				$date->modify('friday this week');
-				$date_label =  $date->format('Y-m-d');
-				if (array_key_exists($date_label,$compt->weekwork ))
-					$compt->weekwork[$date_label] += (float)$wrklog->timespent;
-				else
-					$compt->weekwork[$date_label] = (float)$wrklog->timespent;
-				////////////////////////////
-				
-				
-				if(strtotime($wrklog->started)>GetIntervalDate())
+				$worklog = new WorkLog($wlog);
+				$parenttask->worklogs[] = $worklog;
+				$acc += $wlog['timespent'];
+				if($parenttask->updated < $worklog->started)
+					$parenttask->updated = $worklog->started;
+				UpdateEngineersWorkLogTime($parenttask->engineers,$worklog);
+				UpdateEngineersWorkLogTime($component->engineers,$worklog);
+				UpdateWeeklyWorkLoad($component->weekwork,$worklog);
+				$worklog->recent = false;
+				if(IsRecent($worklog->started))
 				{
-					$wrklog->recent = true;
-					$tsk->recent=true;
-					$compt->recent=true;
-					$compt->recent_worklog_acc += (float)$wrklog->timespent;
-					//echo $compt->recent_worklog_acc.EOL ;
-					
+					$worklog->recent = true;
+					$parenttask->recent=true;
+					$component->recent=true;
+					$component->recent_worklog_acc += $worklog->timespent;
+					$parenttask->recent_worklog_acc+= $worklog->timespent;
+					//if($env == "cmd") echo "1  ".$component->recent_worklog_acc." ".$worklog->timespent." ".$worklog->comment.EOL;
+					//echo $worklog->timespent/(8*60*60)."   ".$parenttask->recent_worklog_acc.EOL;
+					if (array_key_exists($worklog->author ,$component->recent_engineers))
+						$component->recent_engineers[$worklog->author] += $worklog->timespent;
+					else
+						$component->recent_engineers[$worklog->author] = $worklog->timespent;
 				}
-				else
-					$wrklog->recent = false;
-		
-				$tsk->worklogs[] = $wrklog;
+				//echo "        ".$wlog['author']." ".$wlog['timespent'].EOL;
 			}
-			$compt->tasks[] = $tsk;
+			if($parenttask->timespent != $acc)  /// Means something is out of sync so we must flag it
+				echo "     ".$parenttask->key." ".$parenttask->timespent." not equal to timespent of its child tasks whic is ".$acc.EOL;
+			
+			$query = "SELECT * FROM Task where Task.parentid = ".$ptask['tid']." ORDER By ttimespent DESC";
+			$stasks = $db->query($query);
+			foreach($stasks as $stask)
+			{
+				$subtask = new Task($stask);
+				$subtask->worklogs = array();
+				$subtask->engineers= array();
+				$subtask->updated=0;
+				$subtask->recent_worklog_acc = 0;
+				$subtask->recent = false;
+				Decorate($subtask->status);
+			
+				
+				//echo "     ".$stask['key']." ".$stask['status']." ".$stask['ttimespent'].EOL;
+				$query = "SELECT * FROM Worklog where Worklog.task_id = ".$stask['tid']." ORDER BY author ASC, started DESC";
+				$wlogs = $db->query($query);
+				$acc = 0;
+				
+				foreach($wlogs as $wlog)
+				{
+					$worklog = new WorkLog($wlog);
+					$subtask->worklogs[] = $worklog;
+					$acc += $wlog['timespent'];
+					
+					if($subtask->updated < $worklog->started)
+						$subtask->updated = $worklog->started;
+					
+					UpdateEngineersWorkLogTime($subtask->engineers,$worklog);
+					UpdateEngineersWorkLogTime($parenttask->engineers,$worklog);
+					UpdateEngineersWorkLogTime($component->engineers,$worklog);
+					UpdateWeeklyWorkLoad($component->weekwork,$worklog);
+					$worklog->recent = false;
+					if(IsRecent($worklog->started))
+					{
+						$worklog->recent = true;
+						$subtask->recent=true;
+						$parenttask->recent=true;
+						$component->recent=true;
+						$component->recent_worklog_acc += $worklog->timespent;
+						$subtask->recent_worklog_acc+=$worklog->timespent;
+						$parenttask->recent_worklog_acc+=$worklog->timespent;
+						//if($env == "cmd") echo "1  ".$component->recent_worklog_acc." ".$worklog->timespent." ".$worklog->comment.EOL;
+						//echo $worklog->timespent/(8*60*60)."   ".$parenttask->recent_worklog_acc.EOL;
+						
+						if (array_key_exists($worklog->author ,$component->recent_engineers))
+							$component->recent_engineers[$worklog->author] += $worklog->timespent;
+						else
+							$component->recent_engineers[$worklog->author] = $worklog->timespent;
+					}
+					//echo $compt->recent_worklog_acc.EOL ;
+		
+					//echo "        ".$wlog['author']." ".$wlog['timespent'].EOL;
+				}
+				if($subtask->timespent != $acc)  /// Means something is out of sync so we must flag it
+					echo "     ".$subtask->key." ".$subtask->timespent." not equal to timespent of its child tasks whic is ".$acc.EOL;
+				//$subtask->dstatus = DecorateStatus($subtask->status);
+					
+				if($parenttask->updated < $subtask->updated)
+					$parenttask->updated = $subtask->updated;
+			
+				$parenttask->subtasks[] = $subtask;
+				$parenttask->timespent += $subtask->timespent;
+				$parenttask->status = UpdateStatus($subtask->status,$parenttask->status);
+			}
+			//echo "1  ".$component->recent_worklog_acc.EOL;
+			if($component->updated < $parenttask->updated)
+				$component->updated = $parenttask->updated;
+			
+			$component->parenttasks[] = $parenttask;
+			$component->timespent += $parenttask->timespent;
+			$component->status = UpdateStatus($parenttask->status,$component->status);
 		}
-		ksort($compt->weekwork);
-		$projects[] = $compt;
+		ksort($component->weekwork);
+		
+		//foreach($component->weekwork as $week=>$work)
+		//	echo $week." ".$work.EOL;
+		
+		$component->dayspent = $component->timespent/(8*60*60);
+		$projects[] = $component;
 	}
-	UpdateParentChildTasks($projects);
-	//ksort($weekwork);
-	//$projects[0]->weekwork = $weekwork;
+	//PrintTOM($projects);
+	//ValidateTOM($projects);
+	
 	return $projects;
+	
 }
+//if($env == "cmd") ReadDataBase();
 
-ReadDataBase();
 ?>
 

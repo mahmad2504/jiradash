@@ -458,12 +458,23 @@
     clear: both;
 }
 
+.ganttParentTaskDone {
+	color:Black;
+	text-decoration: line-through;
+	font-size: 12px;
+}
+
 .ganttTaskDone {
 	color:Black;
 	text-decoration: line-through;
 	font-size: 10px;	
 }
 
+.ganttParentTask {
+	color:Black;
+	font-size: 12px;
+   background: url(../img/multiple.png) center center no-repeat;
+}
 .ganttTask {
 	color:Black;
 	font-size: 10px;	

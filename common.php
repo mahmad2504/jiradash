@@ -40,8 +40,6 @@ if(!isset($_scale))
 if(!isset($_significant))
 	$_significant = 0;
 	
-		
-
 
 date_default_timezone_set('Asia/Karachi');
 
@@ -49,6 +47,7 @@ date_default_timezone_set('Asia/Karachi');
 define("JIRA_SERVER",'http://jira.alm.mentorg.com:8080');
 define("DATABASE",'jira.sqlite');
 define("UPDATEFILE",'date');
+
 
 $supported_jira_projects = array(
 	'HMIP',
@@ -82,14 +81,17 @@ class Task {
 	public $id;
 	public $key;
 	public $assignee;
-	public $components;
+	public $components; // Filled in when updated from Jira. No other use
 	public $summary;
 	public $timespent;
 	public $status;
-	public $worklogs;
 	public $updated;
 	public $parentid;
 	public $parentkey;
+	
+	////////////////////
+	public $subtasks; // Will hold objects of type Task if it is parent
+	public $worklogs; // Will hold objects if type WorkLog
 }
 class WorkLog {
 	public function __construct($worklog=0) 
@@ -115,9 +117,14 @@ class Component {
 	}
 	public $id;
 	public $name;
-	public $dayspent;
-	public $updated;
 	public $project;
+	
+	///////////////////////////
+	public $parenttasks;  // Will hold the parent task objects of type Task
+
+	
+	//public $dayspent;
+	//public $updated;
 }
 function DisplayName($user)
 {
@@ -149,6 +156,7 @@ function SaveProjectWeeklyWorkLoad($compt)
      
     foreach ($date_labels as $key => $value) 
 	{
+		$value = $value/(8*60*60);
 		$dataSet->addPoint(new Point($key, $value));
 	}
     $chart->setDataSet($dataSet);
@@ -194,11 +202,11 @@ function SaveWeeklyWorkLoad($projects)
 
     $today = new DateTime("now");
      
-    foreach ($date_labels as $key => $value) {
-      
-
+    foreach ($date_labels as $key => $value) 
+	{
+		$value = $value/(8*60*60);
         $dataSet->addPoint(new Point($key, $value));
-   }
+	}
 
     $chart->setDataSet($dataSet);
 
@@ -221,10 +229,14 @@ function SavePieChartRecentProjects($projects)
     {
         if(!$component->recent)
             continue;
-        $dataSet->addPoint(new Point($component->name.'('.(string)truncate($component->recent_worklog_acc,1).' Days)', round($component->recent_worklog_acc)));
+		//echo "->".$component->name.EOL;
+		
+		$value = $component->recent_worklog_acc/(8*60*60); 
+		//echo $component->recent_worklog_acc.EOL;
+        $dataSet->addPoint(new Point($component->name.'('.(string)truncate($value,1).' Days)', round($value)));
     }    
     $chart->setDataSet($dataSet);
-    $chart->setTitle("Last Week Projects");
+    $chart->setTitle("Recent Projects ");
     $chart->render("generated/projects.png");
 }
 function SaveEngineersWorkDistribution($projects)
@@ -260,6 +272,7 @@ function GetIntervalDate()
     $interval = $date->format('U');
     return $interval;
 }
+
 
 
 function truncate($val, $f="0")

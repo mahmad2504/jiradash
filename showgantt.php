@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>jQuery.Gantt</title>
+        <title>Gantt Chart</title>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=IE8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -37,11 +37,9 @@
 		//$arg_str='source: "json-generator.php?_component='.$_component.'&_showunworkedtasks='.$_showunworkedtasks.'&_showrecentonly='.$_showrecentonly.'&_weekly='.$_weekly.'",';
 		//echo $arg_str;
 ?>
-		<script src="js/jquery.min.js"></script>
-		<script src="js/jquery.cookie.min.js"></script>
+		<script src="js/jquery-1.7.2.min.js"></script>
 		<script src="js/jquery.fn.gantt.js"></script>
-		<script src="js/bootstrap.min.js"></script>
-		<script src="js/prettify.min.js"></script>
+		
 		<script>
 	    $(function() {
 
@@ -60,10 +58,16 @@
 ?>
                 useCookie: false,
                 onItemClick: function(data) {
-                    alert("Item clicked - show some details");
+					//window.open("showdata.php?"+data);
+					//$("#content").load("showdata.php?"+data);
+					//jAlert(datastring,"Log By ");
+                    //alert(datastring);
+					//e.preventDefault();
+					
                 },
+				
                 onAddClick: function(dt, rowId) {
-                    alert("Empty space clicked - add an item!");
+                    //alert("Empty space clicked - add an item!");
                 },
                 onRender: function() {
                     if (window.console && typeof console.log === "function") {
@@ -71,23 +75,8 @@
                     }
                 }
             });
-
-
-
-            $(".gantt").popover2({
-                selector: ".bar",
-                title: "I'm a popover",
-                content: "And I'm the content of said popover.",
-                trigger: "hover"
-            });
-
-            prettyPrint();
-
         });
     </script>
-	
-
-	
 	<div class="gantt"></div>
     </body>
 </html>
