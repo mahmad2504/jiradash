@@ -3,21 +3,37 @@
 require_once('jira-interface.php');
 require_once('db-interface.php');
 
+
+if (Check(JIRA_SERVER))
+{
+}
+else
+{
+       echo "Jira Server Down".EOL;
+	   return;
+}
+
 $projects = ReadDataBase();
 
 
 function UpdateTheDateFile()
 {
-	$dte = date("Y-m-d");
+	$dte = date("Y/mm/d+H:i");
 	$file = fopen(UPDATEFILE,"w");
 	fwrite($file,$dte.PHP_EOL);
-	echo "Updated till ".date("Y/m/d+H:i" , filemtime(UPDATEFILE));	
 	fclose($file);
+	
+	echo "Updated till ".$dte;	
 }
 function Update($jira_project,$component)
 {
 	global $db;
+	global $ignore_projects;
+	
 	echo "Updating ".$component,EOL;
+	if(in_array ( $component , $ignore_projects ))
+		return;
+	
 	$tasks = GetWorkLogsForComponent($jira_project,$component);
 	if(count($tasks)>0)
 	{
@@ -115,7 +131,7 @@ function UpdateDelta()
 			$last_update_date = date ("Y/m/d+H:i" , filemtime(UPDATEFILE));	
 		else
 			$last_update_date = "2016/01/01+00:00";
-		echo "Fetching Data from Jira ".$jira." from ".$last_update_date." onwards".EOL;
+		//echo "Fetching Data from Jira ".$jira." from ".$last_update_date." onwards".EOL;
 		$tasks = GetWorkLogsForUpdatedTasks($jira,$last_update_date);
 		if(count($tasks)> 0 )
 		{

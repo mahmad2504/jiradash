@@ -17,6 +17,8 @@ function Login()
 	curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
 	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
 	curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+	curl_setopt($curl, CURLINFO_HEADER_OUT, true); // enable tracking    
+	
 	return $curl;
 }
 
@@ -163,6 +165,9 @@ function SearchUpdatedTasks($jira_project,$updated_after)
 #echo $url;
 	curl_setopt($curl, CURLOPT_URL,$url);
 	$out = curl_exec($curl);
+
+	//$information = curl_getinfo($curl, CURLINFO_HEADER_OUT ); // request headers
+	//print_r($information);
 	
 	return JsonDecode($out);
 }

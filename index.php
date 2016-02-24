@@ -26,15 +26,61 @@
 	
 	<script src="js/jquery.fn.gantt.js"></script>
     <link type="text/css" rel="Stylesheet" href="themes/vader/jquery-ui.css">
+	
+	<script src="jsalert/jquery.alerts.js" type="text/javascript"></script>
+	<link href="jsalert/jquery.alerts.css" rel="stylesheet" type="text/css" media="screen" />
 	<!-- <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">  -->
 	
 	<!-- <link href="css/style.css" type="text/css" rel="stylesheet"> -->
     <!--  <link href="css/prettify.min.css" rel="stylesheet" type="text/css"> -->
 
 <script type="text/javascript">
+
+
+	function RefreshPage() {
+		window.location.reload(true);
+	}
+
+
+	$(document).ajaxStart(function () 
+	{
+		$(document.body).css({ 'cursor': 'wait' })
+	});
+	$(document).ajaxComplete(function () 
+	{
+		$(document.body).css({ 'cursor': 'default' })
+		
+	});
+	function startAjax() 
+	{
+		jAlert("In Progress .....","Updating .....");
+		document.body.style.cursor='wait'
+		$.ajax({
+		type: "POST",
+		url: "update.php",
+//		data: "name=name&location=location",
+		success: function(msg)
+		{
+			
+			if(msg.length == 22)
+			{
+				jAlert(msg,"Error");
+				//setTimeout('RefreshPage()',2000);
+				//alert("Updated. Please refresh the page");
+			}
+			else
+			{
+				jAlert(msg,"Done");
+				setTimeout('RefreshPage()',2000);
+				
+			}
+				
+		}});
+    }
+	
     $(document).ready(function () 
 	{
-
+		
 		$(".gantt").gantt({
 			source:"json-generator.php?component=all&_showunworkedtasks=0&_showrecentonly=0&_weekly=1&_significant=1",
 			scale: "weeks",
@@ -46,24 +92,35 @@
             useCookie: false,
 			
 			onItemClick: function(data) {
-					var page = "showdata.php?"+data;
-					alert(page);
-					var pagetitle = "dfff";//$(this).attr("title")
-					var height = 570;//$(this).attr("height")
-					var width = 1200;//$(this).attr("width")
-					var resizeable = false;//$(this).attr("resizeable")
-					var $dialog = $('<div></div>')
-			
-					.html('<iframe style="" " src="' + page + '" width="99.5%" height="100%"></iframe>')
-					.dialog({
-						autoOpen: false,
-						modal: true,
-						height:height,
-						resizable: resizeable,
-						width: width,
-						title: pagetitle
+				//alert("showdata.php?"+data)
+				//	$('#panel-title').attr('title', 'Photo by Kelly Clark');
+					$('#external').load("showdata.php?"+data, function(response, status, xhr) {
+					if (status == "error") 
+					{
+						var msg = "Sorry but there was an error: ";
+						alert(msg + xhr.status + " " + xhr.statusText);
+					}
 					});
-					$dialog.dialog('open');
+				
+				
+					//var page = "showdata.php?"+data;
+					//alert(page);
+					//var pagetitle = "dfff";//$(this).attr("title")
+					//var height = 570;//$(this).attr("height")
+					//var width = 1200;//$(this).attr("width")
+					//var resizeable = false;//$(this).attr("resizeable")
+					//var $dialog = $('<div></div>')
+			
+					//.html('<iframe style="" " src="' + page + '" width="99.5%" height="100%"></iframe>')
+					//.dialog({
+					//	autoOpen: false,
+					//	modal: true,
+					//	height:height,
+					//	resizable: resizeable,
+					//	width: width,
+					//	title: pagetitle
+					//});
+					//$dialog.dialog('open');
             },
 		});
 		
@@ -101,6 +158,9 @@ $projects = ReadDataBase();
 //SavePieChartRecentProjects($projects);
 //return;
 
+
+
+
 function GetEngineerList($component)
 {
 	$eng_str = "";
@@ -137,15 +197,26 @@ function DisplayOldProjects()
 		}
 	}
 }
-function HowOld($date)
+
+function IsCurrentWeek($date)
 {
-	$date1 = new DateTime("now");
-	$date2 = new DateTime($date);
-	$interval = date_diff($date1, $date2);
-	return $interval->format('%R%a');
-							
+	$date_= DateTime::createFromFormat("Y-m-d", $date);
+	$ts_ = $date_->getTimestamp();
 	
+	$this_week_no=date("W");
+	$week = date("W", $ts_);
+	
+	//echo $date." is week ".$week.EOL;
+	//echo "This week no ".$this_week_no.EOL;
+	
+	//echo $this_week_no - $week;
+	
+	if($this_week_no == $week)
+		return true;
+	else
+		return false;
 }
+
 function DisplayResentWorkLogs()
 {
 	global $projects;
@@ -162,6 +233,9 @@ function DisplayResentWorkLogs()
 	
 			$tabs = "&nbsp&nbsp&nbsp&nbsp";
 			$encode_comp_name = str_replace(" ","%20",$component->name);
+			
+		//	echo count($component->parenttasks);
+			
 			$link = '<span style="float:right;"><a id="pop" width="1200" height="570" style="padding-right: 1cm;" title="'.$component->name.'" href=showgantt.php?_component='.$encode_comp_name.'&_showunworkedtasks=1&_showrecentonly=0&_itemsperpage=200>Gantt</a></span>';
 			if($component->status == "In Progress")
 				$link_color = "green";
@@ -182,7 +256,7 @@ function DisplayResentWorkLogs()
 					{
 						if($worklog->recent)
 						{
-							if( HowOld($worklog->started) >= -6)
+							if( IsCurrentWeek($worklog->started))
 								$image = "thisweek.png";
 							else
 								$image = "prevweek.png";;
@@ -192,6 +266,7 @@ function DisplayResentWorkLogs()
 							$href=JIRA_SERVER.'/browse/'.$parenttask->key.'?focusedWorklogId='.$worklog->id.'&page=com.atlassian.jira.plugin.system.issuetabpanels%3Aworklog-tabpanel#worklog-'.$worklog->id.'>';
 							echo '<a id="pop" width="1200" height="570" style="font-weight: bold;" title="'.$parenttask->key.'"  href="'.$href.'">';
 							echo '<img  src="'.$image.'" alt="More" style="width:10;height:10px;">';
+							//echo WeekNumber($worklog->started).EOL;
 							echo '</a>';
 							echo " ".DisplayName($worklog->author)." ".$worklog->comment.EOL;
 							//echo $worklog->started;
@@ -200,16 +275,22 @@ function DisplayResentWorkLogs()
 					}
 					foreach($parenttask->subtasks as $subtask)
 					{
+						if(!$subtask->recent)
+							continue;
+						
+						echo '<p style="margin-left: .5cm;margin-right: .5cm;">';
+						echo '<a id="pop" width="1200" height="570" style="" title="'.$subtask->key.'" href='.JIRA_SERVER.'/browse/'.$subtask->key.'>'.$subtask->summary.'</a>'."".EOL;
+						echo '</p>';
 						foreach($subtask->worklogs as $worklog)
 						if($worklog->recent)
 						{
-							if( HowOld($worklog->started) >= -6)
+							if( IsCurrentWeek($worklog->started))
 								$image = "thisweek.png";
 							else
 								$image = "prevweek.png";;
 							//$timespent = (float)$timespent + (float)$worklog->timespent;
 							echo '<p style="margin-left: .5cm;margin-right: .5cm;">';
-							echo '<a id="pop" width="1200" height="570" style="" title="'.$subtask->key.'" href='.JIRA_SERVER.'/browse/'.$subtask->key.'>'.$subtask->summary.'</a>'."".EOL;
+						//	echo '<a id="pop" width="1200" height="570" style="" title="'.$subtask->key.'" href='.JIRA_SERVER.'/browse/'.$subtask->key.'>'.$subtask->summary.'</a>'."".EOL;
 							//echo $subtask->summary.'<br>';
 							$href=JIRA_SERVER.'/browse/'.$subtask->key.'?focusedWorklogId='.$worklog->id.'&page=com.atlassian.jira.plugin.system.issuetabpanels%3Aworklog-tabpanel#worklog-'.$worklog->id.'>';
 							echo '<a id="pop" width="1200" height="570" style="font-weight: bold;" title="'.$subtask->key.'"  href="'.$href.'">';
@@ -248,10 +329,18 @@ function GetEastPanelContent()
 		//echo '</div>';
 		
 		echo '<div id="projects" title="Monthly Summary" data-options="selected:true" style="">';
-		echo '<div class="gantt" style="width:100%;" >dsdsdsds</div>';
+		echo '<div class="gantt" style="width:100%;" ></div>';
 		echo '</div>';
 		
+		
 	echo '</div>';
+	
+	echo '<div id="worklog"  class="easyui-panel" title="Work Logs" style="width:100%;height:50%;padding:10px;background:#F0F8FF;overflow: hiddden;" data-options="fit:true, closable:false, collapsible:false,minimizable:false,maximizable:false">';
+		//echo '<p>panel content.</p>';
+		echo '<div id="external" style="float:left; height: 100%; width:95%; display: flex; overflow: hiddden;" ></div>';
+		//echo '<p>panel content.</p>';
+	echo '</div>';
+//	echo '<div id="external" style="float:left; height: 100%; width:95%; display: flex; overflow: hiddden;" >sddsdsdsd</div>';
 }
 function GetWestPanelContent()
 {
@@ -260,13 +349,10 @@ function GetWestPanelContent()
 		echo '<div id="projects" title="Old Projects" data-options="" style="">';
 			DisplayOldProjects();
 		echo '</div>';
+		
 		//global $projects;
 		//$height =  count($projects)*29;
 	echo '</div>';
-	
-	
-	
-	
 	//echo '<img style="max-width:500px;max-height:500px;width:auto; height:auto;   display:table-cell;margin: auto auto;" id="graph-image" alt="Pie chart"  src="generated/projects.png" />';
 	//echo '<img  style="max-width:500px;max-height:500px;width:auto; height:auto; display:table-cell;margin: auto auto;" id="graph-image" alt="Pie chart"  src="generated/workload.png"/>';
 }
@@ -286,14 +372,23 @@ function GetSouthPanelContent()
 	<div data-options="region:'north'" style="height:25px">
 	<img src="blue-gradient.jpg" alt="Mountain View" style="width:100%;height:20px;">
 	</div>
-	<div data-options="region:'west',collapsible:false, split:false,title:'UI & Graphics Dashboard'" style="width:60%;">
+<?php
+	$last_update_date = date ("Y/m/d+H:i" , filemtime(UPDATEFILE));	
+	echo '<div data-options="region:\'west\',collapsible:false, split:false,title:\'UI & Graphics Dashboard - Last Updated '. $last_update_date  .'  \'" style="width:60%;">';
+?>
 	<?php GetEastPanelContent()?>
 	
 	</div>
 	
-	<div data-options="region:'center',title:''"><?php GetWestPanelContent()?></div>
-	<div data-options="region:'south',split:true" style="height:30px;">
-	<img src="blue-gradient.jpg" alt="Mountain View" style="width:100%;height:20px;">
+	<div style="background-image: url('whiteback.jpg');" data-options="region:'center',title:''"><?php GetWestPanelContent()?></div>
+	<div data-options="region:'south',split:true" style="height:30px;" >
+	<div  style="background-image: url('blue-gradient.jpg')">
+<?php
+	$update_link = "<a title='Update' onclick='startAjax(); return false;' href='#update' style='color:white;'>Click to update</a>";
+	echo $update_link;
+?>
+	</div>
+	
 	</div>
 </body>
 </html>

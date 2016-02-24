@@ -72,21 +72,43 @@ function GenerateWeeklyJSONData()
 		else if($comp->name != $_component)
 			continue;
 		
-		if($_significant == 1)
+		//if($_significant == 1)
+		//{
+		//	if($comp->recent)
+		//	{
+		//		// Override
+		//	}
+		//	else
+		//	{			
+		//		if($comp->dayspent < 10)
+		//			continue;
+		//	}
+		//}
+		
+		//if($_showrecentonly == true) if($comp->recent==false) continue;
+		
+		//$last_update = strtotime($comp->updated);
+                if($comp->updated == 0)
+                      continue;
+		$days = HowOld($comp->updated);
+		//echo $comp->name." ".$comp->updated.EOL;
+		//echo $days.EOL;
+		
+		if(!$comp->recent)
 		{
-			if($comp->recent)
+			
+			if($days < -100)// Ignore if more than 100 days old
+				continue;
+		
+			if($comp->dayspent < 10)
 			{
-				
-			}
-			else
-			{			
-				if($comp->dayspent < 10)
+				if($days > -15)// Ignore if more than 100 days old
+				{}
+				else
 					continue;
 			}
 		}
 		
-		if($_showrecentonly == true) if($comp->recent==false) continue;
-			
 		if($comp->dayspent == 0)
 			continue;
 		else
@@ -132,7 +154,8 @@ function GenerateWeeklyJSONData()
 			if($val['label'] == "")
 				$val['label'] = 1;
 			$val['cssClass'] = 'blue';
-			$val['dataObj'] = "_component=".$comp->name."&_date=".date('Y-m-d', $start_date_monday);
+			$name =  str_replace(" ","%20",$comp->name);
+			$val['dataObj'] = "_component=".$name."&_date=".date('Y-m-d', $start_date_monday);
 
 			$data['values'][] = $val;
 		}
@@ -158,6 +181,9 @@ function GenerateDailyJSONDataDetail()
 		$data['cssClassName'] = "ganttProject";
 		$data['cssClassDesc'] = "ganttDesc";
 		$data['values'] =  array();
+		if($component->updated == 0)
+			$component->updated = date('Y-m-d');
+		
 		$start_date = strtotime($component->updated)*1000;
 		$end_date = $start_date;
 		
@@ -377,6 +403,9 @@ function GenerateDailyJSONData()
 		$data['cssClassName'] = "ganttProject";
 		$data['cssClassDesc'] = "ganttDesc";
 		$data['values'] =  array();
+		if($component->updated == 0)
+			$component->updated = date('Y-m-d');
+		
 		$start_date = strtotime($component->updated)*1000;
 		$end_date = $start_date;
 		
