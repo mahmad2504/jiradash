@@ -355,16 +355,32 @@ function UpdateStatus($thisstatus,$prevstatus)
 		return $thisstatus;
 }
 
-function UpdateWeeklyWorkLoad(&$weekwork,$wrklog)
+
+function UpdateWeeklyWorkHighlights(&$comp,$wrklog,$date_label)
+{
+	$pos = strpos($wrklog->comment, 'https');
+	if ($pos != false) 
+	{
+		$submsg = explode(" ",substr($wrklog->comment, $pos));
+		if (array_key_exists($date_label,$comp->weekhighlights ))
+			$comp->weekhighlights[$date_label] += $submsg[0];
+		else
+			$comp->weekhighlights[$date_label] = $submsg[0];
+	}
+}
+function UpdateWeeklyWorkLoad(&$comp,$wrklog)
 {
 	$date = new DateTime();
     $date->setTimestamp(strtotime($wrklog->started));
 	$date->modify('friday this week');
 	$date_label =  $date->format('Y-m-d');
-	if (array_key_exists($date_label,$weekwork ))
-		$weekwork[$date_label] += (float)$wrklog->timespent;
+	if (array_key_exists($date_label,$comp->weekwork ))
+		$comp->weekwork[$date_label] += (float)$wrklog->timespent;
 	else
-		$weekwork[$date_label] = (float)$wrklog->timespent;
+		$comp->weekwork[$date_label] = (float)$wrklog->timespent;
+	
+	
+	UpdateWeeklyWorkHighlights($comp,$wrklog,$date_label);
 }
 function IsRecent($dte)
 {
@@ -393,6 +409,7 @@ function ReadDataBase()
 		$component->status = "Done";
 		$component->recent = false;
 		$component->weekwork = array();
+		$component->weekhighlights = array();
 		
 		$query = "SELECT * FROM Task where Task.component_id = ".$comp['cid']." AND Task.parentid = 0 ORDER By ttimespent DESC";
 		//echo $query;
@@ -423,7 +440,7 @@ function ReadDataBase()
 					$parenttask->updated = $worklog->started;
 				UpdateEngineersWorkLogTime($parenttask->engineers,$worklog);
 				UpdateEngineersWorkLogTime($component->engineers,$worklog);
-				UpdateWeeklyWorkLoad($component->weekwork,$worklog);
+				UpdateWeeklyWorkLoad($component,$worklog);
 				$worklog->recent = false;
 				if(IsRecent($worklog->started))
 				{
@@ -474,7 +491,7 @@ function ReadDataBase()
 					UpdateEngineersWorkLogTime($subtask->engineers,$worklog);
 					UpdateEngineersWorkLogTime($parenttask->engineers,$worklog);
 					UpdateEngineersWorkLogTime($component->engineers,$worklog);
-					UpdateWeeklyWorkLoad($component->weekwork,$worklog);
+					UpdateWeeklyWorkLoad($component,$worklog);
 					$worklog->recent = false;
 					if(IsRecent($worklog->started))
 					{
