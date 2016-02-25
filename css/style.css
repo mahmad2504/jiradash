@@ -24,6 +24,17 @@
    
 }
 
+.ganttGreenRed {
+    background-color: #D8EDA3;
+	color:Red; 
+}
+
+
+.ganttGreyRed {
+    background-color: LightGrey;
+	color:Red; 
+}
+
 
 .gantt:after {
     content: ".";
@@ -241,10 +252,11 @@
     color: #78436D !important;
 }
 
-
 .fn-gantt .ganttGrey {
     background-color: LightGrey;
 }
+
+
 
 .fn-gantt .ganttGreen {
     background-color: #D8EDA3;

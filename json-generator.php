@@ -147,9 +147,30 @@ function GenerateWeeklyJSONData()
 				$val['customClass'] = "ganttGrey";
 			else
 				$val['customClass'] = "ganttGreen";
+			
+			if(array_key_exists($week,$comp->weekhighlights))
+			{
+				$val['desc'] = $comp->weekhighlights[$week];
+				if($comp->status == "Done")
+					$val['customClass'] = "ganttGreyRed";
+				else
+					$val['customClass'] = "ganttGreenRed";
+			}
+			else
+				$val['desc'] = "";
+			
+			//if( $comp->weekhighlights[$week]
 	
 			//$val['customClass'] = "ganttGreen";
-			$val['desc'] = round($timespent)." Days";
+			
+			//$pos = strpos($worklog->comment, 'https');
+			//if ($pos != false) 
+			//{
+			//	$submsg = explode(" ",substr($worklog->comment, $pos));
+			//	$val['desc'] = $submsg[0];
+			//}
+			//else
+			//$val['desc'] = ""; //round($timespent)." Days";
 			$val['label'] = round($timespent);
 			if($val['label'] == "")
 				$val['label'] = 1;
