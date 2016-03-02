@@ -46,13 +46,14 @@
 		}
 		
 		$projects = ReadDataBase();
-		echo '<p class="heading" style="margin-left:20px;">Links</p>';
+		echo '<p class="heading" style="color:blue;margin-left:20px;font-size:120%">Links</p>';
 		
 	
 		echo '<div class="content" style="color:#d3d3d3; font-size:100%">';
 		foreach ($projects as $comp)
 		if($_component == $comp->name)
 		{
+			echo '<p style="color:blue; margin-left:20px;">';
 			foreach($comp->parenttasks as $ptask)
 			{
 				foreach($ptask->worklogs as $worklog)
@@ -61,7 +62,8 @@
 					if ($pos != false) 
 					{
 						$submsg = explode(" ",substr($worklog->comment, $pos));
-						echo $submsg[0];
+						echo '<a href="'.$submsg[0].EOL.'">'.$submsg[0].EOL.'</a>';
+						//echo '</p>';
 						
 					}
 					
@@ -74,12 +76,12 @@
 						if ($pos != false) 
 						{
 							$submsg = explode(" ",substr($worklog->comment, $pos));
-							echo $submsg[0];
+							echo '<a href="'.$submsg[0].EOL.'">'.$submsg[0].EOL.'</a>';
 						}
 					}
 				}
 			}
-			
+			echo '</p>';
 		}
 		echo '</div>';
 		

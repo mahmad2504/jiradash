@@ -51,6 +51,7 @@
         var ed = id.substring(si, id.length);
         return cd === ed;
     }
+	
     $.expr[':'].findweek = $.expr.createPseudo ?
         $.expr.createPseudo(function(text) {
             return function(elt) {
@@ -292,7 +293,7 @@
                     }
                 }
                 // Scroll the grid to today's date
-				console.log(settings.scrollToToday);
+				//console.log(settings.scrollToToday);
                 if (settings.scrollToToday==1) {
                     core.navigateTo(element, 'now');
 		
@@ -799,6 +800,7 @@
                 return $('<div class="rightPanel"></div>').append(dataPanel);
             },
 
+			
             // **Navigation**
             navigation: function (element) {
                 var ganttNavigate = null;
@@ -974,12 +976,12 @@
                 }
                 return $('<div class="bottom"></div>').append(ganttNavigate);
             },
-
             // **Progress Bar**
             // Return an element representing a progress of position within the entire chart
             createProgressBar: function (days, label, desc, classNames, dataObj) {
                 label = label || "";
                 var cellWidth = tools.getCellSize();
+			
                 var barMarg = tools.getProgressBarMargin() || 0;
                 var bar = $('<div class="bar"><div class="fn-label">' + label + '</div></div>')
                         .css({
@@ -989,12 +991,12 @@
                 if (desc) {
                     bar
                       .mouseenter(function (e) {
-                          var hint = $('<div class="fn-gantt-hint" />').html(desc);
+                          var hint = $('<div id="fn-gantt-hint" class="fn-gantt-hint" />').html(desc);
                           $("body").append(hint);
                           hint.css("left", e.pageX);
                           hint.css("top", e.pageY);
                           hint.show();
-                      })
+                     })
                       .mouseleave(function () {
                           $(".fn-gantt-hint").remove();
                       })

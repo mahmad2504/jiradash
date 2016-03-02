@@ -362,9 +362,9 @@ function UpdateWeeklyWorkHighlights(&$comp,$wrklog,$date_label)
 	{
 		$submsg = explode(" ",substr($wrklog->comment, $pos));
 		if (array_key_exists($date_label,$comp->weekhighlights ))
-			$comp->weekhighlights[$date_label] += $submsg[0];
+			$comp->weekhighlights[$date_label] .= $submsg[0];
 		else
-			$comp->weekhighlights[$date_label] = $submsg[0];
+			$comp->weekhighlights[$date_label] = $submsg[0].EOL;
 	}
 }
 function UpdateWeeklyWorkLoad(&$comp,$wrklog)
