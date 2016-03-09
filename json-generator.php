@@ -524,9 +524,21 @@ function GenerateDailyJSONData()
 					$val['customClass'] = "ganttGrey";
 				else
 					$val['customClass'] = "ganttGreen";
+				
+				$pos = strpos($worklog->comment, 'https');
+				if ($pos != false) 
+				{
+					//$val['desc'] = $comp->weekhighlights[$week];
+					if($component->status == "Done")
+						$val['customClass'] = "ganttGreyRed";
+					else
+						$val['customClass'] = "ganttGreenRed";
+				}
+				
+				
 				$val['desc'] = $worklog->comment;
 				$val['label'] = truncate($timespent,1);
-				$val['dataObj'] = "";//$worklog->comment;//(object) ['id' => 1000];
+				$val['dataObj'] = $worklog->comment;
 				$data['values'][] = $val;
 				$last_author = $worklog->author;
 			}
