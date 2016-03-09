@@ -88,7 +88,7 @@
 								echo 'name : "'.$submsgg[0].'",';
 							
 							$dte = explode("-",$worklog->started);
-							echo 'on : new Date('.$dte[0].','.$dte[1].','.$dte[2].')';
+							echo 'on : new Date('.$dte[0].','.($dte[1]-1).','.$dte[2].')';
 							if($dte[0] < $start_year)
 								$start_year = $dte[0];
 							if($dte[0]> $end_year)
@@ -126,7 +126,7 @@
 								else
 									echo 'name : "'.$submsgg.'",';
 								$dte = explode("-",$worklog->started);
-								echo 'on : new Date('.$dte[0].','.$dte[1].','.$dte[2].')';
+								echo 'on : new Date('.$dte[0].','.($dte[1]-1).','.$dte[2].')';
 								if($dte[0] < $start_year)
 									$start_year = $dte[0];
 								if($dte[0]> $end_year)
