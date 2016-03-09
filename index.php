@@ -386,7 +386,7 @@ function GetSouthPanelContent()
 <?php
 	$update_link = "<a title='Update' onclick='startAjax(); return false;' href='#update' style='color:white;'>Click to update</a>";
 	echo $update_link;
-	echo '<span style="float:right;color:white;">For Queries and bug contact Mumtaz_Ahmad@mentor.com</span>';
+	echo '<span style="float:right;color:white;">For Queries and bugs contact Mumtaz_Ahmad@mentor.com</span>';
 ?>
 	</div>
 	
