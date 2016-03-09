@@ -357,10 +357,10 @@ function UpdateStatus($thisstatus,$prevstatus)
 
 function UpdateWeeklyWorkHighlights(&$comp,$wrklog,$date_label)
 {
-	$pos = strpos($wrklog->comment, 'https');
+	$pos = strpos($wrklog->comment, '{');
 	if ($pos != false) 
 	{
-		$submsg = explode(" ",substr($wrklog->comment, $pos));
+		$submsg = explode("}",substr($wrklog->comment, $pos+1));
 		if (array_key_exists($date_label,$comp->weekhighlights ))
 			$comp->weekhighlights[$date_label] .= $submsg[0];
 		else
