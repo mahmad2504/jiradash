@@ -18,12 +18,12 @@ $projects = ReadDataBase();
 
 function UpdateTheDateFile()
 {
-	$dte = date("Y/mm/d+H:i");
+	$dte = date("Y/m/d+H:i");
 	$file = fopen(UPDATEFILE,"w");
 	fwrite($file,$dte.PHP_EOL);
 	fclose($file);
 	
-	echo "Updated till ".$dte;	
+	echo "Updated till ".$dte;
 }
 function Update($jira_project,$component)
 {

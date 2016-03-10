@@ -395,6 +395,10 @@ function ReadDataBase()
 	global $users;
 	$projects = array();
 	$comps = $db->query("SELECT * FROM Component");
+	
+	if (!$comps) 
+		return;
+	
 	foreach($comps as $comp)
 	{
 		$component = new Component($comp);
