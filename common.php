@@ -55,6 +55,7 @@ $supported_jira_projects = array(
 
 $ignore_projects = array(
 "Venetian",
+"test",
 
 );
 
@@ -68,6 +69,7 @@ $users = array(
     "aayub" => "Ali Ayub",
     "ymajeed" => "Yasir Majeed",
     "aarehman" => "Abdul Rehman",
+    
 );
 
 class Task {
@@ -82,6 +84,8 @@ class Task {
 		$this->updated = $task['updated'];
 		$this->parentid = $task['parentid'];
 		$this->parentkey = $task['parentkey'];
+		$this->originalestimate = $task['originalestimate'];
+		
 	}
 	public $id;
 	public $key;
@@ -93,6 +97,7 @@ class Task {
 	public $updated;
 	public $parentid;
 	public $parentkey;
+	public $originalestimate;
 	
 	////////////////////
 	public $subtasks; // Will hold objects of type Task if it is parent
@@ -139,26 +144,24 @@ function DisplayName($user)
 	else
 		return $user;
 }
+
 function HowOld($date)
 {
 	$date1 = new DateTime("now");
 	
 	$date2 = new DateTime($date);
 	$interval = date_diff($date1, $date2);
-	return $interval->format('%R%a');
-							
-	
+	return $interval->format('%R%a');					
 }
+
 function SaveProjectWeeklyWorkLoad($compt)
 {
-	
     $date_labels = array();
 	$date_labels = $compt->weekwork;
 	if(count($date_labels)==1)
 		return;
 		
     ksort($date_labels);
-    
     
     include "libchart/libchart/classes/libchart.php";
 

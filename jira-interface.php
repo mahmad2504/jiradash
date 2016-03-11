@@ -119,9 +119,12 @@ function JsonDecode($json_data)
 			$task = new Task();
 			//print_r($entry);
 			$task->key = $entry['key'];
+			//echo $task->key." ";
 			$task->id = $entry['id'];
 			$task->summary = $entry['fields']['summary'];
-			$task->assignee = $entry['fields']['assignee']['name'];				
+			$task->assignee = $entry['fields']['assignee']['name'];	
+			$task->originalestimate = $entry['fields']['aggregatetimeoriginalestimate'];
+			//echo $task->originalestimate.EOL;
 			$update_date= explode("T", $entry['fields']['updated'], 2);
 			$task->updated = $update_date[0];
 			foreach($entry['fields']['components'] as $component)
@@ -159,7 +162,7 @@ function SearchUpdatedTasks($jira_project,$updated_after)
 	global $curl;
 	//$component = str_replace(" ","%20",$component);
 	//$query = 'project='.$jira_project.'+and+component="'.$component.'"&maxResults=1000';
-	$query = 'project='.$jira_project.'+and+component+is+not+EMPTY+and+updated+>+"'.$updated_after.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent';
+	$query = 'project='.$jira_project.'+and+component+is+not+EMPTY+and+updated+>+"'.$updated_after.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
 
 	$url=JIRA_SERVER."/rest/api/latest/search?jql=".$query;
 #echo $url;
@@ -177,7 +180,7 @@ function GetTask($task_key)
 {
 	
 	global $curl;
-	$query = 'issuekey="'.$task_key.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent';
+	$query = 'issuekey="'.$task_key.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
 	$url=JIRA_SERVER."/rest/api/latest/search?jql=".$query;
 //echo $url;
 	curl_setopt($curl, CURLOPT_URL,$url);
@@ -194,7 +197,7 @@ function SearchTasks($jira_project,$component)
 	
 	global $curl;
 	$component = str_replace(" ","%20",$component);
-	$query = 'project='.$jira_project.'+and+component="'.$component.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent';
+	$query = 'project='.$jira_project.'+and+component="'.$component.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
 	$url=JIRA_SERVER."/rest/api/latest/search?jql=".$query;
 #echo $url;
 	curl_setopt($curl, CURLOPT_URL,$url);

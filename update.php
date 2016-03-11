@@ -13,7 +13,7 @@ else
 	   return;
 }
 
-$projects = ReadDataBase();
+//$projects = ReadDataBase();
 
 
 function UpdateTheDateFile()

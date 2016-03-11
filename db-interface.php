@@ -41,7 +41,8 @@ function CreateDataBase()
 		'status' TEXT NOT NULL,
 		'updated' TEXT NOT NULL,
 		'parentid' INTEGER,
-		'parentkey' TEXT
+		'parentkey' TEXT,
+		'originalestimate' INTEGER
     );
 	
 	CREATE TABLE 'Worklog' 
@@ -86,17 +87,18 @@ function AddTask($task)
 	// SQL for inserting dummy data
 	//echo $task->summary.EOL;
 	
-	$stmt = $db->prepare("INSERT INTO [Task] (tid, component_id, key,assignee,summary,ttimespent,status,updated,parentid,parentkey) VALUES (:task_id, :component_id, :key, :assignee, :summary, :timespent, :status, :updated, :parentid, :parentkey)");
-		$stmt->bindParam(':task_id', $task->id);
-		$stmt->bindParam(':component_id', $component->id);
-		$stmt->bindParam(':key', $task->key);
-		$stmt->bindParam(':assignee', $task->assignee);
-		$stmt->bindParam(':summary', $task->summary);
-		$stmt->bindParam(':timespent', $task->timespent);
-		$stmt->bindParam(':status', $task->status);
-		$stmt->bindParam(':updated', $task->updated);
+	$stmt = $db->prepare("INSERT INTO [Task] (tid, component_id, key,assignee,summary,ttimespent,status,updated,parentid,parentkey,originalestimate) VALUES (:task_id, :component_id, :key, :assignee, :summary, :timespent, :status, :updated, :parentid, :parentkey, :originalestimate)");
+	$stmt->bindParam(':task_id', $task->id);
+	$stmt->bindParam(':component_id', $component->id);
+	$stmt->bindParam(':key', $task->key);
+	$stmt->bindParam(':assignee', $task->assignee);
+	$stmt->bindParam(':summary', $task->summary);
+	$stmt->bindParam(':timespent', $task->timespent);
+	$stmt->bindParam(':status', $task->status);
+	$stmt->bindParam(':updated', $task->updated);
 	$stmt->bindParam(':parentid', $task->parentid);
 	$stmt->bindParam(':parentkey', $task->parentkey);
+	$stmt->bindParam(':originalestimate',$task->originalestimate);
 	$result = $stmt->execute();
 	if ($result === false) 
 	{
@@ -407,6 +409,7 @@ function ReadDataBase()
 		$component->engineers= array();
 		$component->recent_engineers = array();
 		$component->timespent=0;
+		$component->originalestimate = 0;
 		$component->updated=0;
 		$component->recent_worklog_acc = 0;
 		$component->status = "Done";
@@ -428,6 +431,7 @@ function ReadDataBase()
 			$parenttask->updated = 0;
 			$parenttask->recent_worklog_acc = 0;
 			$parenttask->recent = false;
+			$component->originalestimate += $parenttask->originalestimate;
 			Decorate($parenttask->status);
 			
 			//echo " @".$ptask['key']." ".$ptask['status']." ".$ptask['ttimespent'].EOL;
@@ -542,6 +546,8 @@ function ReadDataBase()
 		//	echo $week." ".$work.EOL;
 		
 		$component->dayspent = $component->timespent/(8*60*60);
+		$component->originalestimate = $component->originalestimate/(8*60*60);
+		//echo EOL.$component->originalestimate.EOL;
 		$projects[] = $component;
 	}
 	//PrintTOM($projects);

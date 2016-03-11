@@ -112,7 +112,21 @@ function GenerateWeeklyJSONData()
 		if($comp->dayspent == 0)
 			continue;
 		else
-			$data['desc'] = round($comp->dayspent). " d";
+		{
+			if($comp->originalestimate > 0)
+			{
+				$data['desc'] = round($comp->dayspent)."/".round($comp->originalestimate)."d";
+				if(round($comp->dayspent)<=round($comp->originalestimate))
+					$data['cssClassDesc'] = "ganttDescGreen";
+				else
+					$data['cssClassDesc'] = "ganttDescRed";
+			}
+			else
+			{
+				$data['desc'] = round($comp->dayspent)."d";
+				$data['cssClassDesc'] = "ganttDesc";
+			}
+		}			
 		$component = str_replace(" ","%20",$comp->name);
 		$link = '<a id="pop" width="1200" height="570" href=showgantt.php?_component='.$component.'&_showunworkedtasks=1&_showrecentonly=0&_itemsperpage=200>'.$comp->name.'</a>';
 		//echo $link;
@@ -122,7 +136,7 @@ function GenerateWeeklyJSONData()
 			$data['cssClassName'] = "ganttProjectDone";
 		else
 			$data['cssClassName'] = "ganttProject";
-		$data['cssClassDesc'] = "ganttDesc";
+		
 		$data['values'] =  array();
 	
 		foreach($comp->weekwork as $week=>$timespent)
@@ -420,9 +434,23 @@ function GenerateDailyJSONData()
 		MergeChildWorkLogs($component);
 		
 		$data['name'] = $component->name;
-		$data['desc'] = round($component->dayspent). " d";
+		
+		if($component->originalestimate > 0)
+		{
+			$data['desc'] = round($component->dayspent)."/".round($component->originalestimate)."d";
+			if(round($component->dayspent)<=round($component->originalestimate))
+				$data['cssClassDesc'] = "ganttDescGreen";
+			else
+				$data['cssClassDesc'] = "ganttDescRed";
+		}
+		else
+		{
+			$data['desc'] = round($comp->dayspent)."d";
+			$data['cssClassDesc'] = "ganttDesc";
+		}
+		//$data['desc'] = round($component->dayspent). " d";
 		$data['cssClassName'] = "ganttProject";
-		$data['cssClassDesc'] = "ganttDesc";
+		//$data['cssClassDesc'] = "ganttDesc";
 		$data['values'] =  array();
 		if($component->updated == 0)
 			$component->updated = date('Y-m-d');

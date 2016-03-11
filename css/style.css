@@ -1,4 +1,17 @@
 
+.ganttDescRed {
+	color:Red; 
+	font-size: 10px;
+   
+}
+
+.ganttDescGreen {
+	color:#0000ff; 
+	font-size: 10px;
+   
+}
+
+
 
 .ganttDesc {
 	color:Grey; 
