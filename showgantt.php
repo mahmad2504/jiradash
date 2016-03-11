@@ -38,15 +38,15 @@
 		{
 			$string = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $string);
 		}
-		function ConstructTimeLine()
+		function ConstructTimeLine($ech=true)
 		{
 			global $projects;
 			$start_year = 2030;
 			$end_year = 0;
 			// Fake entry
-			echo 'id : 1,';
-			echo 'name : "Joined",';
-			echo 'on : new Date(2009,11,15)';
+			if($ech) echo 'id : 1,';
+			if($ech) echo 'name : "Joined",';
+			if($ech) echo 'on : new Date(2009,11,15)';
 			$id = 2;
 			
 			global $_component;
@@ -66,8 +66,8 @@
 						{
 							$submsgg = explode("}",substr($worklog->comment, $pos+1));
 							
-							echo '},{';
-							echo 'id : '.$id++.',';
+							if($ech) echo '},{';
+							if($ech) echo 'id : '.$id++.',';
 							//$submsg[0]=$worklog->started;//"https://pkl-mumtaza-w7/svn/SCRPackager/bitmap_code_gen".;
 							ReplaceAnyIllegalCharacter($submsgg[0]);
 							
@@ -81,14 +81,14 @@
 									$submsg[1] = "<a style='color:white' href='".$submsg[1]."'>".$submsg[0]."</a>";
 								}
 								//$submsg[1] = $pos;
-								echo 'name : "'.$submsg[1].'",';
+								if($ech) echo 'name : "'.$submsg[1].'",';
 								//echo 'on : new Date(2011,01,17)';
 							}
 							else
-								echo 'name : "'.$submsgg[0].'",';
+								if($ech) echo 'name : "'.$submsgg[0].'",';
 							
 							$dte = explode("-",$worklog->started);
-							echo 'on : new Date('.$dte[0].','.($dte[1]-1).','.$dte[2].')';
+							if($ech) echo 'on : new Date('.$dte[0].','.($dte[1]-1).','.$dte[2].')';
 							if($dte[0] < $start_year)
 								$start_year = $dte[0];
 							if($dte[0]> $end_year)
@@ -105,8 +105,8 @@
 							{
 								$submsgg = explode("}",substr($worklog->comment, $pos+1));
 								
-								echo '},{';
-								echo 'id : '.$id++.',';
+								if($ech) echo '},{';
+								if($ech) echo 'id : '.$id++.',';
 								//$submsg[0]=$worklog->started;//"https://pkl-mumtaza-w7/svn/SCRPackager/bitmap_code_gen".;
 								ReplaceAnyIllegalCharacter($submsgg[0]);
 								$submsg = explode("::",$submsgg[0]);
@@ -120,13 +120,13 @@
 										$submsg[1] = "<a style='color:white' href='".$submsg[1]."'>".$submsg[0]."</a>";
 									}
 									//$submsg[1] = $pos;
-									echo 'name : "'.$submsg[1].'",';
+									if($ech) echo 'name : "'.$submsg[1].'",';
 									//echo '<a href="'.$submsg[0].EOL.'">'.$submsg[0].EOL.'</a>';
 								}
 								else
-									echo 'name : "'.$submsgg.'",';
+									if($ech) echo 'name : "'.$submsgg.'",';
 								$dte = explode("-",$worklog->started);
-								echo 'on : new Date('.$dte[0].','.($dte[1]-1).','.$dte[2].')';
+								if($ech) echo 'on : new Date('.$dte[0].','.($dte[1]-1).','.$dte[2].')';
 								if($dte[0] < $start_year)
 									$start_year = $dte[0];
 								if($dte[0]> $end_year)
@@ -191,17 +191,26 @@
             });
         });
     </script>
-	<hr style="margin-bottom:10px"/>
-	<div id="myTimeline"></div>
-	<hr style="margin-bottom:0px"/>
-	
+<?php
+	$years = ConstructTimeLine(false);
+	if($years[0] != "2030")
+	{
+		echo '<hr style="margin-bottom:10px"/>';
+		echo '<div id="myTimeline"></div>';
+		echo '<hr style="margin-bottom:0px"/>';
+	}
+?>
+
 <script type="text/javascript">
 <?php
 					echo 'var ev = [{';
 					$years = ConstructTimeLine();
 					$startYear = $years[0];
 					$endYear = $years[1];
-					$nyears = $endYear-$startYear+1;
+					if($startYear == "2030")
+						$nyears = 0;
+					else 
+						$nyears = $endYear-$startYear+1;
 					$gap = 75/$nyears;
 					echo '}]';
 ?>
@@ -234,6 +243,7 @@
 
 	<div class="gantt"></div>
 <?php
+	
 	if($_component != "all")
 	{
 		if (file_exists('generated/'.$_component.'_ed.png')) 

@@ -445,7 +445,7 @@ function GenerateDailyJSONData()
 		}
 		else
 		{
-			$data['desc'] = round($comp->dayspent)."d";
+			$data['desc'] = round($component->dayspent)."d";
 			$data['cssClassDesc'] = "ganttDesc";
 		}
 		//$data['desc'] = round($component->dayspent). " d";
@@ -462,6 +462,7 @@ function GenerateDailyJSONData()
 		$val['to'] = '/Date(' . $end_date . ')/';
 		$val['customClass'] = "ganttProjectBar";
 		$val['desc'] = '';
+		//$data['cssClassDesc'] = "ganttDesc";
 		$val['label'] = '';
 		$val['cssClass'] = 'blue';
 		$val['dataObj'] = (object) ['id' => 1000];
@@ -525,6 +526,7 @@ function GenerateDailyJSONData()
 						$data['name'] = " ";
 					}
 					$data['desc'] = DisplayName($worklog->author);
+					$data['cssClassDesc'] = "ganttDesc";
 					if(($task->status == "Done"))
 					{
 						$data['cssClassName'] = "ganttTaskDone";
