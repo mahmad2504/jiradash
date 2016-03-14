@@ -124,7 +124,7 @@
 									//echo '<a href="'.$submsg[0].EOL.'">'.$submsg[0].EOL.'</a>';
 								}
 								else
-									if($ech) echo 'name : "'.$submsgg.'",';
+									if($ech) echo 'name : "'.$submsgg[0].'",';
 								$dte = explode("-",$worklog->started);
 								if($ech) echo 'on : new Date('.$dte[0].','.($dte[1]-1).','.$dte[2].')';
 								if($dte[0] < $start_year)
@@ -227,19 +227,7 @@
 							}
 						});
 		</script>
-<script type="text/javascript">
 
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-36251023-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-</script>
 
 	<div class="gantt"></div>
 <?php
@@ -248,7 +236,7 @@
 	{
 		if (file_exists('generated/'.$_component.'_ed.png')) 
 		{
-			echo '<img style="max-width:400px;max-height:400px;width:auto; height:auto;" src="generated/'.$_component.'_ed.png" alt="bottle" class="thumbnails" />';
+			echo '<img style="max-width:500px;max-height:500px;width:auto; height:auto;" src="generated/'.$_component.'_ed.png" alt="bottle" class="thumbnails" />';
 			echo '</img>';
 		}
 		
