@@ -390,6 +390,37 @@ function IsRecent($dte)
 	else
 		return false;
 }
+
+function UpdateSpecialStatus(&$component,$parenttask)
+{
+	if($component->status2 != "none")
+		return;
+	
+	//echo $parenttask->summary.$parenttask->status.EOL;
+	if(($parenttask->summary == "Pre Sales Work") && ($parenttask->status == "In Progress"))
+		$component->status2 = "Pre Sales";
+	
+	if(($parenttask->summary == "Execution") && ($parenttask->status == "In Progress"))
+		$component->status2 = "Execution";
+	
+	if(($parenttask->summary == "Closure") && ($parenttask->status == "In Progress"))
+		$component->status2 = "Closure";
+	
+//echo $component->status2.EOL;
+	
+}
+function UpdateRiskStatus(&$component,$task)
+{
+	if($component->risk == true)
+		return;
+	
+	if(($task->summary == "Risk") && ($task->status == "In Progress"))
+		$component->risk = true;
+	
+
+	
+}
+
 function ReadDataBase()
 {
 	global $db;
@@ -413,6 +444,8 @@ function ReadDataBase()
 		$component->updated=0;
 		$component->recent_worklog_acc = 0;
 		$component->status = "Done";
+		$component->status2 = "none";
+		$component->risk = false;
 		$component->recent = false;
 		$component->weekwork = array();
 		$component->weekhighlights = array();
@@ -431,6 +464,8 @@ function ReadDataBase()
 			$parenttask->updated = 0;
 			$parenttask->recent_worklog_acc = 0;
 			$parenttask->recent = false;
+			UpdateSpecialStatus($component,$parenttask);
+			UpdateRiskStatus($component,$parenttask);
 			$component->originalestimate += $parenttask->originalestimate;
 			Decorate($parenttask->status);
 			
@@ -478,6 +513,7 @@ function ReadDataBase()
 				$subtask->updated=0;
 				$subtask->recent_worklog_acc = 0;
 				$subtask->recent = false;
+				UpdateRiskStatus($component,$subtask);
 				Decorate($subtask->status);
 			
 				
