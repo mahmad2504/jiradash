@@ -48,16 +48,41 @@ define("JIRA_SERVER",'http://jira.alm.mentorg.com:8080');
 define("DATABASE",'jira.sqlite');
 define("UPDATEFILE",'date');
 
-
-$supported_jira_projects = array(
-	'HMIP',
+$label_id = -1000;
+$configuration = Array(
+    'MEH' => Array
+        (
+            "intel_automotive_hyp" =>  $label_id--,
+        ),
+		'HMIP' => Array
+        (
+            'ALL' => "ALL",
+        ),
+/*
+    'HMIP' => Array
+        (
+            'Intel-Broxton' => "Intel Broxton",
+        ),
+*/
 );
+    
 
+$supported_jira_projects = array();
+
+foreach($configuration as $proj => $comp_arr)
+	$supported_jira_projects[] = $proj;
+	
+/*
 $ignore_projects = array(
 "Venetian",
 "test",
 
 );
+
+$project_labels = array(
+	"intel_automotive_hyp" => "Intel-Hypervisor"
+);
+*/
 
 $users = array(
 	"asali" => "Asad Ali",
@@ -69,7 +94,7 @@ $users = array(
     "aayub" => "Ali Ayub",
     "ymajeed" => "Yasir Majeed",
     "aarehman" => "Abdul Rehman",
-    
+    "hmustafa" => "Hamza Mustafa",
 );
 
 class Task {
@@ -224,7 +249,6 @@ function SaveWeeklyWorkLoad($projects)
                 $date_labels[$key] += $value;
             else
                 $date_labels[$key] = $value;
-            
          }
     }
     ksort($date_labels);

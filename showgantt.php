@@ -192,13 +192,13 @@
         });
     </script>
 <?php
-	$years = ConstructTimeLine(false);
-	if($years[0] != "2030")
-	{
-		echo '<hr style="margin-bottom:10px"/>';
-		echo '<div id="myTimeline"></div>';
-		echo '<hr style="margin-bottom:0px"/>';
-	}
+	//$years = ConstructTimeLine(false);
+	//if($years[0] != "2030")
+	//{
+	//	echo '<hr style="margin-bottom:10px"/>';
+	//	echo '<div id="myTimeline"></div>';
+	//	echo '<hr style="margin-bottom:0px"/>';
+	//}
 ?>
 
 <script type="text/javascript">
@@ -232,7 +232,7 @@
 	<div class="gantt"></div>
 <?php
 	
-	if($_component != "all")
+	if(0)//$_component != "all")
 	{
 		if (file_exists('generated/'.$_component.'_ed.png')) 
 		{

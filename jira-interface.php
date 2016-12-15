@@ -39,8 +39,10 @@ function ConvertTimeSpentSimple($timespent)
 	if($type == 'w')
 		return $count*5;
 	else
-		echo $timespent." ".$count." wrong type of time coversion";
-		
+	{
+		//echo $timespent." ".$count." wrong type of time coversion";
+		return 0;
+	}
 	
 	
 }
@@ -63,10 +65,9 @@ function GetWorkLog(&$task)
 	curl_setopt($curl, CURLOPT_URL,$url);
 	$out = curl_exec($curl);
 	$worklogs = json_decode($out, true);
-
-	
 	$worklog_array = array();
 	#echo $key.EOL;
+	
     foreach ($worklogs['worklogs'] as $log) 
 	{
 		$worklog = new WorkLog();
@@ -74,7 +75,13 @@ function GetWorkLog(&$task)
 		// ignore un registered users and their logs
 		if(array_key_exists($log['author']['name'] , $users )==false)
 		{
-			$task->timespent = $task->timespent - ConvertJiraTime($log['timeSpent']);
+			$ts = ConvertJiraTime($log['timeSpent']);
+			if($ts == 0)
+			{
+				echo "Some work log of task ".$task->key." is wrong";
+			}
+			$task->timespent = $task->timespent - $ts;
+			
 			continue;
 		}
 		
@@ -107,9 +114,14 @@ function GetWorkLog(&$task)
 	$task->worklogs = $worklog_array;
 	return $worklog_array;
 }
-
-function JsonDecode($json_data)
+$id=-1;
+function JsonDecode($json_data,$jira_project="none")
 {
+	//global $project_labels ;
+	global $id;
+	global $configuration;
+	
+	$components = $configuration[$jira_project];
 	$issues = json_decode($json_data, true);
 	if(isset($issues['issues']))
 	{
@@ -127,12 +139,47 @@ function JsonDecode($json_data)
 			//echo $task->originalestimate.EOL;
 			$update_date= explode("T", $entry['fields']['updated'], 2);
 			$task->updated = $update_date[0];
+
+			if(isset($entry['fields']['labels']))
+			{
+			foreach($entry['fields']['labels'] as $label)
+			{
+				//echo $label."\n";
+				$j = 0;
+				foreach($components as $comp_name => $comp_id)
+				{
+					//echo $comp_name." ".$comp_decorated_name."\n";
+					if($label == $comp_name)
+					{
+						$comp = new Component();
+						$comp->id = $comp_id;
+						//echo $comp->id;
+						$comp->name = $label;
+						$task->components[] = $comp;
+						//$id = $id - 1;
+					}
+					$j++;
+				}
+			}
+			}
+			
 			foreach($entry['fields']['components'] as $component)
 			{
+				$found = 0;
+				foreach($components as $comp_name => $comp_id)
+				{
+					
+					if(($component['name'] == $comp_name)||($comp_name == "ALL"))
+					{
 				$comp = new Component();
 				$comp->id = $component['id'];
 				$comp->name = $component['name'];
-				$task->components[] = $comp;			
+						$task->components[] = $comp;
+						$found = 1;
+					}
+				}
+				if(!$found)
+					echo "Skipping ".$component['name'].EOL;
 			}
 			//$task->component = $entry['fields']['components']['0']['name'];
 			if(strlen($entry['fields']['timespent']) > 0)
@@ -151,7 +198,7 @@ function JsonDecode($json_data)
 				$task->parentid = 0;
 				$task->parentkey = 0;
 			}
-			
+			if( count($task->components) > 0 )
 			$tasks[] = $task;
 		}
 		return $tasks;
@@ -162,17 +209,17 @@ function SearchUpdatedTasks($jira_project,$updated_after)
 	global $curl;
 	//$component = str_replace(" ","%20",$component);
 	//$query = 'project='.$jira_project.'+and+component="'.$component.'"&maxResults=1000';
-	$query = 'project='.$jira_project.'+and+component+is+not+EMPTY+and+updated+>+"'.$updated_after.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
+	$query = 'project='.$jira_project.'+and+updated+>+"'.$updated_after.'"&maxResults=1000&fields=id,key,labels,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
 
 	$url=JIRA_SERVER."/rest/api/latest/search?jql=".$query;
-#echo $url;
+//echo $url;
 	curl_setopt($curl, CURLOPT_URL,$url);
 	$out = curl_exec($curl);
 
 	//$information = curl_getinfo($curl, CURLINFO_HEADER_OUT ); // request headers
 	//print_r($information);
 	
-	return JsonDecode($out);
+	return JsonDecode($out,$jira_project);
 }
 
 // Return Tasks of some component. No worklog added 
@@ -180,13 +227,28 @@ function GetTask($task_key)
 {
 	
 	global $curl;
-	$query = 'issuekey="'.$task_key.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
+	$query = 'issuekey="'.$task_key.'"&maxResults=1000&fields=id,key,labels,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
 	$url=JIRA_SERVER."/rest/api/latest/search?jql=".$query;
 //echo $url;
 	curl_setopt($curl, CURLOPT_URL,$url);
 	$out = curl_exec($curl);
 //echo $out;
 	return JsonDecode($out);
+
+}
+
+// Return Tasks of some component. No worklog added 
+function SearchTasksByLabel($jira_project,$label)
+{
+	
+	global $curl;
+	$label = str_replace(" ","%20",$label);
+	$query = 'project='.$jira_project.'+and+labels="'.$label.'"&maxResults=1000&fields=id,key,labels,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
+	$url=JIRA_SERVER."/rest/api/latest/search?jql=".$query;
+//echo $url;
+	curl_setopt($curl, CURLOPT_URL,$url);
+	$out = curl_exec($curl);
+	return JsonDecode($out,$jira_project);
 
 }
 
@@ -197,12 +259,12 @@ function SearchTasks($jira_project,$component)
 	
 	global $curl;
 	$component = str_replace(" ","%20",$component);
-	$query = 'project='.$jira_project.'+and+component="'.$component.'"&maxResults=1000&fields=id,key,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
+	$query = 'project='.$jira_project.'+and+component="'.$component.'"&maxResults=1000&fields=id,key,labels,summary,components,assignee,timespent,status,updated,parent,aggregatetimeoriginalestimate';
 	$url=JIRA_SERVER."/rest/api/latest/search?jql=".$query;
 #echo $url;
 	curl_setopt($curl, CURLOPT_URL,$url);
 	$out = curl_exec($curl);
-	return JsonDecode($out);
+	return JsonDecode($out,$jira_project);
 
 }
 
@@ -222,11 +284,25 @@ function GetWorkLogsForUpdatedTasks($jira_project,$updated_after)
 function GetWorkLogsForComponent($jira_project,$component)
 {
 	$tasks = SearchTasks($jira_project,$component);
+	if(count($tasks)>0)
+	{
 	foreach($tasks as $task)
 		GetWorkLog($task);
 	return $tasks;
+	}
 }
 
+// Return Tasks - Along with worklog 
+function GetWorkLogsForLabel($jira_project,$label)
+{
+	$tasks = SearchTasksByLabel($jira_project,$label);
+	if(count($tasks)>0)
+	{
+		foreach($tasks as $task)
+			GetWorkLog($task);
+		return $tasks;
+	}
+}
 
 /////////////////////////////////////////////////////////////////
 // API

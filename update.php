@@ -31,10 +31,14 @@ function Update($jira_project,$component)
 	global $ignore_projects;
 	
 	echo "Updating ".$component,EOL;
-	if(in_array ( $component , $ignore_projects ))
-		return;
+	//if(in_array ( $component , $ignore_projects ))
+	//	return;
 	
 	$tasks = GetWorkLogsForComponent($jira_project,$component);
+
+	if(count($tasks)==0)
+		$tasks = GetWorkLogsForLabel($jira_project,$component);
+		
 	if(count($tasks)>0)
 	{
 		//DeleteDatabase();
@@ -50,7 +54,14 @@ function Update($jira_project,$component)
 				//echo $comp->name.EOL;
 				AddComponent($jira_project,$comp);
 			}
-			AddTask($task);
+			//echo "->".$task->worklogs."\n";
+			if($task->parentid>0)
+			      AddTask($task);
+			else
+			{
+				if( count($task->worklogs)>0)
+					AddTask($task);
+			}
 			$worklogs = $task->worklogs;
 			foreach($worklogs as $log)
 				AddLog($log,$task->id);
@@ -68,9 +79,9 @@ function Rebuild($jira_project,$date)
 	$tasks = GetWorkLogsForUpdatedTasks($jira_project,$date);
 	if(count($tasks)>0)
 	{
-		DeleteDatabase();
+		/*DeleteDatabase();
 		OpenDataBase();
-		CreateDataBase();
+		CreateDataBase();*/
 		$db->beginTransaction();
 		foreach($tasks as $task)
 		{
@@ -81,7 +92,13 @@ function Rebuild($jira_project,$date)
 				//echo $comp->name.EOL;
 				AddComponent($jira_project,$comp);
 			}
+			if($task->parentid>0)
 			AddTask($task);
+			else
+			{
+				if( count($task->worklogs)>0)
+					AddTask($task);
+			}
 			$worklogs = $task->worklogs;
 			foreach($worklogs as $log)
 				AddLog($log,$task->id);
@@ -95,6 +112,9 @@ function Rebuild($jira_project,$date)
 function FullUpdate($date)
 {
 	global $supported_jira_projects;
+	DeleteDatabase();
+	OpenDataBase();
+	CreateDataBase();
 	foreach($supported_jira_projects as $jira)
 	{
 		echo "Updating ".$jira.EOL;
@@ -104,7 +124,8 @@ function FullUpdate($date)
 
 function ProjectUpdate($jira,$project)
 {
-	global $projects;
+	$projects = ReadDataBase();
+	
 	foreach($projects as $component)
 	{
 		if($component->name == $project)

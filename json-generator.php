@@ -135,21 +135,11 @@ function GenerateWeeklyJSONData()
 			}
 		}			
 		$component = str_replace(" ","%20",$comp->name);
-		
-		if($comp->status2 != "none")
-			$label = $comp->name." - ".$comp->status2;
-		else
-			$label = $comp->name;
-		
 		if($comp->status == "Done")
-			$link = '<a id="pop" style="color:grey;" width="1200" height="570" href=showgantt.php?_component='.$component.'&_showunworkedtasks=1&_showrecentonly=0&_itemsperpage=200>'.$label.'</a>';
+			$link = '<a id="pop" style="color:grey;" width="1200" height="570" href=showgantt.php?_component='.$component.'&_showunworkedtasks=1&_showrecentonly=0&_itemsperpage=200>'.$comp->name.'</a>';
 		else
-		{
-			if($comp->risk)
-				$link = '<a id="pop" style="color:red;" width="1200" height="570" href=showgantt.php?_component='.$component.'&_showunworkedtasks=1&_showrecentonly=0&_itemsperpage=200>'.$label.'</a>';
-			else
-				$link = '<a id="pop" style="color:green;" width="1200" height="570" href=showgantt.php?_component='.$component.'&_showunworkedtasks=1&_showrecentonly=0&_itemsperpage=200>'.$label.'</a>';
-		}
+			$link = '<a id="pop" style="color:green;" width="1200" height="570" href=showgantt.php?_component='.$component.'&_showunworkedtasks=1&_showrecentonly=0&_itemsperpage=200>'.$comp->name.'</a>';
+		
 		//echo $link;
 		$data['name'] = $link;
 		
